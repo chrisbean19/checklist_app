@@ -5,6 +5,7 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include <iostream>
+#include <vector>
 
 int main()
 {
@@ -34,28 +35,32 @@ int main()
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
 
-    while (!glfwWindowShouldClose(window))
-    {
-        // Start new frame
+    std::vector<std::string> tasks = { "Write code", "Test app", "Refactor UI" };
+    std::vector<uint8_t> completed(tasks.size(), 0);
+
+    while (!glfwWindowShouldClose(window)) {
+        glfwPollEvents();
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        // Build UI
-        ImGui::Begin("Hello, Christine!");
-        ImGui::Text("This is ImGui inside your OpenGL window.");
+        ImGui::Begin("Checklist");
+        for (size_t i = 0; i < tasks.size(); ++i) {
+            bool value = completed.at(i);
+            if (ImGui::Checkbox(tasks.at(i).c_str(), &value))
+            {
+                completed[i] = value;
+            }
+        }
         ImGui::End();
 
-        // Rendering
         ImGui::Render();
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-        // Swap buffers after rendering
         glfwSwapBuffers(window);
-        glfwPollEvents();
     }
+
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
