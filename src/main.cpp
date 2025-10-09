@@ -5,6 +5,8 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include <vector>
 
 int main()
@@ -38,7 +40,29 @@ int main()
     std::vector<std::string> tasks = { "Write code", "Test app", "Refactor UI" };
     std::vector<uint8_t> completed(tasks.size(), 0);
 
-    while (!glfwWindowShouldClose(window)) {
+    std::ifstream in("build/checklist.txt");
+    if (in.is_open() && in.peek() != std::ifstream::traits_type::eof()) {
+        tasks.clear();
+        completed.clear();
+
+        std::string line;
+        while (std::getline(in, line)) {
+            std::istringstream iss(line);
+            int doneInt;
+            std::string task;
+
+            if (!(iss >> doneInt)) continue;  // Skip malformed lines
+            std::getline(iss, task);
+            if (task.empty()) continue;
+
+            completed.push_back(static_cast<uint8_t>(doneInt));
+            tasks.push_back(task.substr(1));  // Remove leading space
+        }
+    }
+
+
+    while (!glfwWindowShouldClose(window))
+    {
         glfwPollEvents();
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
@@ -61,6 +85,13 @@ int main()
         glfwSwapBuffers(window);
     }
 
+    // Save state before closing
+    std::ofstream out("build/checklist.txt");
+    for (size_t i = 0; i < tasks.size(); ++i)
+    {
+        out << static_cast<int>(completed.at(i)) << " " << tasks.at(i) << "\n";
+    }
+    out.close();
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
