@@ -81,10 +81,12 @@ void Application::run()
         for (size_t i = 0; i < mTasks.size(); ++i)
         {
             bool value = mCompleted.at(i);
-            if (ImGui::Checkbox(mTasks.at(i).data(), &value))
+            if (ImGui::Checkbox(("##check" + std::to_string(i)).c_str(), &value)) // Invisible label
             {
                 mCompleted.at(i) = value;
             }
+            ImGui::SameLine();
+            ImGui::InputText(("##task" + std::to_string(i)).c_str(), mTasks.at(i).data(), constants::BUFFER_SIZE);
         }
         ImGui::End();
 
