@@ -8,12 +8,14 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
+#include <array>
+#include "constants.hpp"
 
 class Application
 {
     private:
         GLFWwindow* mWindow;
-        std::vector<std::string> mTasks;
+        std::vector<std::array<char, constants::BUFFER_SIZE>> mTasks;
         std::vector<uint8_t> mCompleted;
     public:
         Application();

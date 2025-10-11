@@ -1,11 +1,7 @@
 #include "Application.hpp"
-#include "constants.hpp"
 
 Application::Application()
 {
-    std::vector<std::string> defaultTasks = { "Write code", "Test app", "Refactor UI" };
-    std::vector<uint8_t> defaultCompleted(defaultTasks.size(), 0);
-
     std::ifstream in(constants::STATE_FILE);
     if (in.is_open() && in.peek() != std::ifstream::traits_type::eof()) {
         mTasks.clear();
@@ -22,12 +18,21 @@ Application::Application()
             if (task.empty()) continue;
 
             mCompleted.push_back(static_cast<uint8_t>(doneInt));
-            mTasks.push_back(task.substr(1));  // Remove leading space
+            std::array<char, constants::BUFFER_SIZE> buf;
+            strncpy(buf.data(), task.substr(1).c_str(), constants::BUFFER_SIZE);  // Remove leading space
+            mTasks.push_back(buf);
         }
     }
     else
     {
-        mTasks = defaultTasks;
+        std::vector<std::string> defaultTasks = { "Write code", "Test app", "Refactor UI" };
+        // Initialize editable buffers
+        for (const auto& task : defaultTasks) {
+            std::array<char, constants::BUFFER_SIZE> buf;
+            strncpy(buf.data(), task.c_str(), sizeof(buf));
+            mTasks.push_back(buf);
+        }
+        std::vector<uint8_t> defaultCompleted(defaultTasks.size(), 0);
         mCompleted = defaultCompleted;
     }
 }
@@ -76,9 +81,9 @@ void Application::run()
         for (size_t i = 0; i < mTasks.size(); ++i)
         {
             bool value = mCompleted.at(i);
-            if (ImGui::Checkbox(mTasks.at(i).c_str(), &value))
+            if (ImGui::Checkbox(mTasks.at(i).data(), &value))
             {
-                mCompleted[i] = value;
+                mCompleted.at(i) = value;
             }
         }
         ImGui::End();
@@ -97,7 +102,7 @@ void Application::shutdown()
     std::ofstream out(constants::STATE_FILE);
     for (size_t i = 0; i < mTasks.size(); ++i)
     {
-        out << static_cast<int>(mCompleted.at(i)) << " " << mTasks.at(i) << "\n";
+        out << static_cast<int>(mCompleted.at(i)) << " " << mTasks.at(i).data() << "\n";
     }
     out.close();
 
