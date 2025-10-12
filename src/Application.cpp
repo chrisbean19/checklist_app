@@ -87,6 +87,18 @@ void Application::run()
             }
             ImGui::SameLine();
             ImGui::InputText(("##task" + std::to_string(i)).c_str(), mTasks.at(i).data(), constants::BUFFER_SIZE);
+            ImGui::SameLine();
+            if (ImGui::Button(("X##" + std::to_string(i)).c_str())) {
+                mTasks.erase(mTasks.begin() + i);
+                mCompleted.erase(mCompleted.begin() + i);
+                --i;
+            }
+        }
+        if (ImGui::Button("+")) {
+            std::array<char, constants::BUFFER_SIZE> buf;
+            strncpy(buf.data(), "New Task", sizeof(buf));
+            mTasks.push_back(buf);
+            mCompleted.push_back(0);
         }
         ImGui::End();
 
