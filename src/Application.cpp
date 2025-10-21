@@ -1,44 +1,8 @@
 #include "Application.hpp"
 
-Application::Application()
-{
-    std::ifstream in(constants::STATE_FILE);
-    if (in.is_open() && in.peek() != std::ifstream::traits_type::eof()) {
-        mTasks.clear();
-        mCompleted.clear();
-
-        std::string line;
-        while (std::getline(in, line)) {
-            std::istringstream iss(line);
-            int doneInt;
-            std::string task;
-
-            if (!(iss >> doneInt)) continue;  // Skip malformed lines
-            std::getline(iss, task);
-            if (task.empty()) continue;
-
-            mCompleted.push_back(static_cast<uint8_t>(doneInt));
-            std::array<char, constants::BUFFER_SIZE> buf;
-            strncpy(buf.data(), task.substr(1).c_str(), constants::BUFFER_SIZE);  // Remove leading space
-            mTasks.push_back(buf);
-        }
-    }
-    else
-    {
-        std::vector<std::string> defaultTasks = { "Write code", "Test app", "Refactor UI" };
-        // Initialize editable buffers
-        for (const auto& task : defaultTasks) {
-            std::array<char, constants::BUFFER_SIZE> buf;
-            strncpy(buf.data(), task.c_str(), sizeof(buf));
-            mTasks.push_back(buf);
-        }
-        std::vector<uint8_t> defaultCompleted(defaultTasks.size(), 0);
-        mCompleted = defaultCompleted;
-    }
-}
-
 int Application::init()
 {
+    mListManager.setListFromFile();
     if (!glfwInit()) return -1;
 
     mWindow = glfwCreateWindow(800, 600, "Checklist App", nullptr, nullptr);
@@ -70,6 +34,7 @@ int Application::init()
 
 void Application::run()
 {
+    std::cout << "Print once" << std::endl;
     while (!glfwWindowShouldClose(mWindow))
     {
         glfwPollEvents();
@@ -78,27 +43,27 @@ void Application::run()
         ImGui::NewFrame();
 
         ImGui::Begin("Checklist");
-        for (size_t i = 0; i < mTasks.size(); ++i)
+        for (size_t i = 0; i < mListManager.getListSize(); ++i)
         {
-            bool value = mCompleted.at(i);
+            bool value = mListManager.getCompletedAt(i);
             if (ImGui::Checkbox(("##check" + std::to_string(i)).c_str(), &value)) // Invisible label
             {
-                mCompleted.at(i) = value;
+                mListManager.setCompletedAt(i, value);
             }
             ImGui::SameLine();
-            ImGui::InputText(("##task" + std::to_string(i)).c_str(), mTasks.at(i).data(), constants::BUFFER_SIZE);
+            ImGui::InputText(("##task" + std::to_string(i)).c_str(), mListManager.getTasksAt(i), constants::BUFFER_SIZE);
             ImGui::SameLine();
             if (ImGui::Button(("X##" + std::to_string(i)).c_str())) {
-                mTasks.erase(mTasks.begin() + i);
-                mCompleted.erase(mCompleted.begin() + i);
+                mListManager.eraseTasksAt(i);
+                mListManager.eraseCompletedAt(i);
                 --i;
             }
         }
         if (ImGui::Button("+")) {
             std::array<char, constants::BUFFER_SIZE> buf;
             strncpy(buf.data(), "New Task", sizeof(buf));
-            mTasks.push_back(buf);
-            mCompleted.push_back(0);
+            mListManager.pushBackTasks(buf);
+            mListManager.pushBackCompleted(0);
         }
         ImGui::End();
 
@@ -112,13 +77,7 @@ void Application::run()
 
 void Application::shutdown()
 {
-    // Save state before closing
-    std::ofstream out(constants::STATE_FILE);
-    for (size_t i = 0; i < mTasks.size(); ++i)
-    {
-        out << static_cast<int>(mCompleted.at(i)) << " " << mTasks.at(i).data() << "\n";
-    }
-    out.close();
+    mListManager.saveListToFile();
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
