@@ -1,15 +1,11 @@
 #include "Application.hpp"
-#include "constants.hpp"
+#include <memory>
 
 int main()
 {
-    Application checklist;
+    std::unique_ptr<Application> checklist = std::make_unique<Application>();
 
-    checklist.init();
-
-    checklist.run();
-
-    checklist.shutdown();
+    checklist->run();
 
     return 0;
 }

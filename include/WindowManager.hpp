@@ -15,11 +15,12 @@ class WindowManager
 {
     private:
         GLFWwindow* mWindow;
+        std::unique_ptr<ListManager> mListManager;
     public:
         WindowManager();
         bool windowShouldClose();
         void startNewFrame();
-        void buildUI(std::unique_ptr<ListManager> &lm);
+        void buildUI();
         void render();
         void swapBuffers();
         ~WindowManager();

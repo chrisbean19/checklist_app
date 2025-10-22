@@ -2,7 +2,7 @@
 #include "constants.hpp"
 #include <stdexcept>
 
-WindowManager::WindowManager()
+WindowManager::WindowManager() : mListManager(std::make_unique<ListManager>(constants::STATE_FILE))
 {
     if (!glfwInit()) throw std::runtime_error("Failed to initialize GLFW\n");
 
@@ -28,6 +28,8 @@ WindowManager::WindowManager()
 
     ImGui_ImplGlfw_InitForOpenGL(mWindow, true);
     ImGui_ImplOpenGL3_Init(constants::OPENGL_VERSION);
+
+    mListManager->setListFromFile();
 }
 
 bool WindowManager::windowShouldClose()
@@ -42,32 +44,32 @@ void WindowManager::startNewFrame()
     ImGui::NewFrame();
 }
 
-void WindowManager::buildUI(std::unique_ptr<ListManager> &lm)
+void WindowManager::buildUI()
 {
     ImGui::Begin("Checklist");
-        for (size_t i = 0; i < lm->getListSize(); ++i)
+    for (size_t i = 0; i < mListManager->getListSize(); ++i)
+    {
+        bool value = mListManager->getCompletedAt(i);
+        if (ImGui::Checkbox(("##check" + std::to_string(i)).c_str(), &value)) // Invisible label
         {
-            bool value = lm->getCompletedAt(i);
-            if (ImGui::Checkbox(("##check" + std::to_string(i)).c_str(), &value)) // Invisible label
-            {
-                lm->setCompletedAt(i, value);
-            }
-            ImGui::SameLine();
-            ImGui::InputText(("##task" + std::to_string(i)).c_str(), lm->getTasksAt(i), constants::BUFFER_SIZE);
-            ImGui::SameLine();
-            if (ImGui::Button(("X##" + std::to_string(i)).c_str())) {
-                lm->eraseTasksAt(i);
-                lm->eraseCompletedAt(i);
-                --i;
-            }
+            mListManager->setCompletedAt(i, value);
         }
-        if (ImGui::Button("+")) {
-            std::array<char, constants::BUFFER_SIZE> buf;
-            strncpy(buf.data(), "New Task", sizeof(buf));
-            lm->pushBackTasks(buf);
-            lm->pushBackCompleted(0);
+        ImGui::SameLine();
+        ImGui::InputText(("##task" + std::to_string(i)).c_str(), mListManager->getTasksAt(i), constants::BUFFER_SIZE);
+        ImGui::SameLine();
+        if (ImGui::Button(("X##" + std::to_string(i)).c_str())) {
+            mListManager->eraseTasksAt(i);
+            mListManager->eraseCompletedAt(i);
+            --i;
         }
-        ImGui::End();
+    }
+    if (ImGui::Button("+")) {
+        std::array<char, constants::BUFFER_SIZE> buf;
+        strncpy(buf.data(), "New Task", sizeof(buf));
+        mListManager->pushBackTasks(buf);
+        mListManager->pushBackCompleted(0);
+    }
+    ImGui::End();
 }
         
 void WindowManager::render()
@@ -86,6 +88,8 @@ void WindowManager::swapBuffers()
 
 WindowManager::~WindowManager()
 {
+    mListManager->saveListToFile();
+
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
