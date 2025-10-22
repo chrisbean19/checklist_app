@@ -80,6 +80,11 @@ void ListManager::pushBackCompleted(bool value)
     mCompleted.push_back(value);
 }
 
+void ListManager::swapCompleted(size_t idx1, size_t idx2)
+{
+    std::swap(mCompleted.at(idx1), mCompleted.at(idx2));
+}
+
 char* ListManager::getTasksAt(size_t idx)
 {
     return mTasks.at(idx).data();
@@ -93,4 +98,9 @@ void ListManager::eraseTasksAt(size_t idx)
 void ListManager::pushBackTasks(std::array<char, constants::BUFFER_SIZE> value)
 {
     mTasks.push_back(value);
+}
+
+void ListManager::swapTasks(size_t idx1, size_t idx2)
+{
+    std::swap(mTasks.at(idx1), mTasks.at(idx2));
 }

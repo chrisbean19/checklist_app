@@ -49,19 +49,50 @@ void WindowManager::buildUI()
     ImGui::Begin("Checklist");
     for (size_t i = 0; i < mListManager->getListSize(); ++i)
     {
+        ImGui::PushID(static_cast<int>(i));
+
         bool value = mListManager->getCompletedAt(i);
         if (ImGui::Checkbox(("##check" + std::to_string(i)).c_str(), &value)) // Invisible label
         {
             mListManager->setCompletedAt(i, value);
         }
         ImGui::SameLine();
-        ImGui::InputText(("##task" + std::to_string(i)).c_str(), mListManager->getTasksAt(i), constants::BUFFER_SIZE);
+        std::string id = "##task_" + std::string(mListManager->getTasksAt(i)); // TODO : need to stabilize the task ID during editing
+        ImGui::InputText(id.c_str(), mListManager->getTasksAt(i), constants::BUFFER_SIZE);
         ImGui::SameLine();
-        if (ImGui::Button(("X##" + std::to_string(i)).c_str())) {
+
+        // Drag source
+        if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
+        {
+            ImGui::SetDragDropPayload("TASK_INDEX", &i, sizeof(size_t));
+            ImGui::Text("Move task");
+            ImGui::EndDragDropSource();
+        }
+
+        // Drop target
+        if (ImGui::BeginDragDropTarget())
+        {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("TASK_INDEX"))
+            {
+                size_t srcIndex = *(const size_t*)payload->Data;
+                if (srcIndex != i) 
+                {
+                    mListManager->swapTasks(i, srcIndex);
+                    mListManager->swapCompleted(i, srcIndex);
+                }
+            }
+            ImGui::EndDragDropTarget();
+        }
+
+        // Delete
+        if (ImGui::Button(("X##" + std::to_string(i)).c_str()))
+        {
             mListManager->eraseTasksAt(i);
             mListManager->eraseCompletedAt(i);
             --i;
         }
+
+        ImGui::PopID();
     }
     if (ImGui::Button("+")) {
         std::array<char, constants::BUFFER_SIZE> buf;
