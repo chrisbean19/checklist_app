@@ -57,8 +57,14 @@ void WindowManager::buildUI()
             mListManager->setCompletedAt(i, value);
         }
         ImGui::SameLine();
-        std::string id = "##task_" + std::string(mListManager->getTasksAt(i)); // TODO : need to stabilize the task ID during editing
-        ImGui::InputText(id.c_str(), mListManager->getTasksAt(i), constants::BUFFER_SIZE);
+        std::string id = "##task_" + mListManager->getTasksAt(i);
+        if (ImGui::InputText(id.c_str(), mListManager->getEditableTasksAt(i), constants::BUFFER_SIZE,
+                         ImGuiInputTextFlags_EnterReturnsTrue))
+        {
+            // User pressed Enter → commit edit
+            mListManager->setTasksAt(i, std::string(mListManager->getEditableTasksAt(i)));
+        }
+
         ImGui::SameLine();
 
         // Drag source
@@ -97,7 +103,8 @@ void WindowManager::buildUI()
     if (ImGui::Button("+")) {
         std::array<char, constants::BUFFER_SIZE> buf;
         strncpy(buf.data(), "New Task", sizeof(buf));
-        mListManager->pushBackTasks(buf);
+        mListManager->pushBackTasks(buf.data());
+        mListManager->pushBackEditableTasks(buf);
         mListManager->pushBackCompleted(0);
     }
     ImGui::End();
